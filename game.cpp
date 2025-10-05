@@ -5,13 +5,14 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <memory>
 
 // Constants
 const int WIDTH = 1000;
 const int HEIGHT = 700;
-float PLAYER_SPEED = 8.0f;
+const float PLAYER_SPEED = 8.0f;
 const float APPLE_FALL_SPEED = 3.375f;
-const int MIN_DESIRE = 20;
+const int MIN_DESIRE = 30;
 const int MAX_DESIRE = 80;
 const int GAME_DURATION = 180;
 
@@ -72,6 +73,17 @@ private:
     sf::RenderWindow window;
     GameState state;
     sf::Font font;
+    
+    // Audio
+    sf::Music backgroundMusic;
+    sf::SoundBuffer collectBuffer;
+    sf::SoundBuffer missBuffer;
+    sf::SoundBuffer gameOverBuffer;
+    sf::SoundBuffer victoryBuffer;
+    std::unique_ptr<sf::Sound> collectSound;
+    std::unique_ptr<sf::Sound> missSound;
+    std::unique_ptr<sf::Sound> gameOverSound;
+    std::unique_ptr<sf::Sound> victorySound;
     
     // Player
     sf::RectangleShape player;
@@ -157,10 +169,42 @@ public:
         // Load font
         if (!font.openFromFile("/System/Library/Fonts/Helvetica.ttc")) {
             if (!font.openFromFile("C:/Windows/Fonts/arial.ttf")) {
-                if (!font.openFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")) {
-                }
+                font.openFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
             }
         }
+        
+        // Load background music
+        if (!backgroundMusic.openFromFile("background_music.ogg")) {
+            if (!backgroundMusic.openFromFile("background_music.mp3")) {
+                backgroundMusic.openFromFile("background_music.wav");
+            }
+        }
+        backgroundMusic.setLooping(true);
+        backgroundMusic.setVolume(50.f);
+        
+        // Load sound buffers
+        if (!collectBuffer.loadFromFile("collect_sound.ogg")) {
+            collectBuffer.loadFromFile("collect_sound.wav");
+        }
+        if (!missBuffer.loadFromFile("miss_sound.ogg")) {
+            missBuffer.loadFromFile("miss_sound.wav");
+        }
+        if (!gameOverBuffer.loadFromFile("gameover_sound.ogg")) {
+            gameOverBuffer.loadFromFile("gameover_sound.wav");
+        }
+        if (!victoryBuffer.loadFromFile("victory_sound.ogg")) {
+            victoryBuffer.loadFromFile("victory_sound.wav");
+        }
+        
+        // Create sounds with buffers
+        collectSound = std::make_unique<sf::Sound>(collectBuffer);
+        collectSound->setVolume(70.f);
+        missSound = std::make_unique<sf::Sound>(missBuffer);
+        missSound->setVolume(60.f);
+        gameOverSound = std::make_unique<sf::Sound>(gameOverBuffer);
+        gameOverSound->setVolume(80.f);
+        victorySound = std::make_unique<sf::Sound>(victoryBuffer);
+        victorySound->setVolume(80.f);
         
         // Setup player
         player.setSize(sf::Vector2f(70.f, 15.f));
@@ -242,7 +286,7 @@ public:
         pauseTitle.setPosition(sf::Vector2f(WIDTH / 2.f - pauseBounds.size.x / 2.f, HEIGHT / 2.f - 180.f));
         
         resumeButton.setSize(sf::Vector2f(350.f, 70.f));
-        resumeButton.setFillColor(sf::Color(220, 20, 60)); // Red apple color
+        resumeButton.setFillColor(sf::Color(220, 20, 60));
         resumeButton.setOutlineThickness(3.f);
         resumeButton.setOutlineColor(sf::Color::White);
         resumeButton.setPosition(sf::Vector2f(WIDTH / 2.f - 175.f, HEIGHT / 2.f - 80.f));
@@ -254,7 +298,7 @@ public:
         resumeText.setPosition(sf::Vector2f(WIDTH / 2.f - resumeBounds.size.x / 2.f, HEIGHT / 2.f - 65.f));
         
         restartButton.setSize(sf::Vector2f(350.f, 70.f));
-        restartButton.setFillColor(sf::Color(255, 215, 0)); // Golden apple color
+        restartButton.setFillColor(sf::Color(255, 215, 0));
         restartButton.setOutlineThickness(3.f);
         restartButton.setOutlineColor(sf::Color::White);
         restartButton.setPosition(sf::Vector2f(WIDTH / 2.f - 175.f, HEIGHT / 2.f + 20.f));
@@ -266,7 +310,7 @@ public:
         restartText.setPosition(sf::Vector2f(WIDTH / 2.f - restartBounds.size.x / 2.f, HEIGHT / 2.f + 35.f));
         
         quitButton.setSize(sf::Vector2f(350.f, 70.f));
-        quitButton.setFillColor(sf::Color(101, 67, 33)); // Rotten apple color
+        quitButton.setFillColor(sf::Color(101, 67, 33));
         quitButton.setOutlineThickness(3.f);
         quitButton.setOutlineColor(sf::Color::White);
         quitButton.setPosition(sf::Vector2f(WIDTH / 2.f - 175.f, HEIGHT / 2.f + 120.f));
@@ -301,6 +345,7 @@ public:
                     if (keyPressed->code == sf::Keyboard::Key::Space) {
                         state = GameState::PLAYING;
                         resetGame();
+                        backgroundMusic.play();
                     }
                 }
                 else if (state == GameState::PLAYING) {
@@ -308,11 +353,13 @@ public:
                         keyPressed->code == sf::Keyboard::Key::P) {
                         state = GameState::PAUSED;
                         hoveredButton = 0;
+                        backgroundMusic.pause();
                     }
                 }
                 else if (state == GameState::PAUSED) {
                     if (keyPressed->code == sf::Keyboard::Key::Escape) {
                         state = GameState::PLAYING;
+                        backgroundMusic.play();
                     }
                 }
                 else if (state == GameState::GAME_OVER || state == GameState::VICTORY) {
@@ -320,6 +367,7 @@ public:
                         state = GameState::INTRO;
                         introScene = 0;
                         introTimer = 0;
+                        backgroundMusic.stop();
                     }
                 }
             }
@@ -347,13 +395,16 @@ public:
                         
                         if (resumeButton.getGlobalBounds().contains(mousePos)) {
                             state = GameState::PLAYING;
+                            backgroundMusic.play();
                         } else if (restartButton.getGlobalBounds().contains(mousePos)) {
                             state = GameState::PLAYING;
                             resetGame();
+                            backgroundMusic.play();
                         } else if (quitButton.getGlobalBounds().contains(mousePos)) {
                             state = GameState::INTRO;
                             introScene = 0;
                             introTimer = 0;
+                            backgroundMusic.stop();
                         }
                     }
                 }
@@ -392,7 +443,6 @@ public:
         
         float sceneTime = introTimer;
         float sceneDuration = 7.0f;
-        float fadeOutStart = 6.5f;
         
         switch(introScene) {
             case 0:
@@ -472,23 +522,18 @@ public:
     void updatePlaying(float deltaTime) {
         gameTime += deltaTime;
         
-        // Check for speed increases at 200, 600, 1000, 1400, etc.
         if (score >= 200) {
             int currentMilestone = (score / 200) * 200;
-            // Trigger on odd multiples: 200, 600, 1000, 1400...
             if (currentMilestone > lastSpeedIncreaseScore && currentMilestone % 400 == 200) {
                 currentAppleSpeed *= 1.5f;
                 lastSpeedIncreaseScore = currentMilestone;
                 speedIncreaseNotificationTimer = 3.0f;
-                PLAYER_SPEED += 4;
                 speedIncreaseMessage = "Apples Falling Faster!";
             }
         }
         
-        // Check for range decreases at 400, 800, 1200, 1600, etc.
         if (score >= 400) {
             int currentMilestone = (score / 200) * 200;
-            // Trigger on even multiples: 400, 800, 1200, 1600...
             if (currentMilestone > lastRangeDecreaseScore && currentMilestone % 400 == 0) {
                 currentMinDesire = std::min(45, currentMinDesire + 5);
                 currentMaxDesire = std::max(55, currentMaxDesire - 5);
@@ -498,19 +543,20 @@ public:
             }
         }
         
-        // Check win condition
         if (gameTime >= GAME_DURATION) {
             if (desireGauge >= currentMinDesire && desireGauge <= currentMaxDesire) {
                 state = GameState::VICTORY;
+                backgroundMusic.stop();
+                if (victorySound) victorySound->play();
             } else {
                 state = GameState::GAME_OVER;
-                PLAYER_SPEED = 8;
                 gameOverReason = "Time's up!";
+                backgroundMusic.stop();
+                if (gameOverSound) gameOverSound->play();
             }
             return;
         }
         
-        // Player movement
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) || 
             sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)) {
             playerX -= PLAYER_SPEED;
@@ -523,14 +569,12 @@ public:
         playerX = std::max(35.0f, std::min(playerX, static_cast<float>(WIDTH) - 35.0f));
         player.setPosition(sf::Vector2f(playerX, static_cast<float>(HEIGHT) - 80.f));
         
-        // Spawn apples
         spawnTimer += deltaTime;
-        if (spawnTimer > 1.0f) {
+        if (spawnTimer > 2.0f) {
             spawnApple();
             spawnTimer = 0;
         }
         
-        // Update apples
         for (auto it = apples.begin(); it != apples.end();) {
             it->update();
             
@@ -547,7 +591,6 @@ public:
             }
         }
         
-        // Desire decay
         static float desireDecayTimer = 0;
         desireDecayTimer += deltaTime;
         if (desireDecayTimer > 10.0f) {
@@ -555,7 +598,6 @@ public:
             desireDecayTimer = 0;
         }
         
-        // Update notification timers
         if (rangeChangeNotificationTimer > 0) {
             rangeChangeNotificationTimer -= deltaTime;
         }
@@ -563,21 +605,22 @@ public:
             speedIncreaseNotificationTimer -= deltaTime;
         }
         
-        // Check game over conditions
         if (desireGauge < currentMinDesire) {
             state = GameState::GAME_OVER;
             gameOverReason = "Apathy - You lost the will to live";
+            backgroundMusic.stop();
+            if (gameOverSound) gameOverSound->play();
         }
         else if (desireGauge > currentMaxDesire) {
             state = GameState::GAME_OVER;
             gameOverReason = "Obsession - Consumed by greed";
+            backgroundMusic.stop();
+            if (gameOverSound) gameOverSound->play();
         }
         
-        // Update desire bar
         float desirePercent = desireGauge / 100.0f;
         desireBar.setSize(sf::Vector2f(300.f * desirePercent, 20.f));
         
-        // Change bar color based on danger
         if (desireGauge < MIN_DESIRE) {
             desireBar.setFillColor(sf::Color(200, 50, 50));
         } else if (desireGauge > MAX_DESIRE) {
@@ -609,6 +652,8 @@ public:
     }
 
     void collectApple(Apple& apple) {
+        if (collectSound) collectSound->play();
+        
         switch(apple.type) {
             case AppleType::RED:
                 score += 20;
@@ -616,17 +661,18 @@ public:
                 break;
             case AppleType::GOLDEN:
                 score += 80;
-                desireGauge = std::max(0, desireGauge - 15);
+                desireGauge = std::max(0, desireGauge - 10);
                 break;
             case AppleType::ROTTEN:
                 score += 5;
-                desireGauge = std::min(100, desireGauge + 30);
+                desireGauge = std::min(100, desireGauge + 40);
                 break;
         }
     }
 
     void missApple() {
-        desireGauge = std::max(0, desireGauge - 5);
+        if (missSound) missSound->play();
+        desireGauge = std::max(0, desireGauge - 10);
     }
 
     void resetGame() {
@@ -646,7 +692,6 @@ public:
         rangeChangeMessage = "";
         speedIncreaseNotificationTimer = 0;
         speedIncreaseMessage = "";
-        PLAYER_SPEED = 8;
     }
 
     void render() {
@@ -843,7 +888,6 @@ public:
         window.draw(minDesireLabel);
         window.draw(maxDesireLabel);
         
-        // Draw speed increase notification
         if (speedIncreaseNotificationTimer > 0) {
             float alpha = 255.f;
             if (speedIncreaseNotificationTimer > 2.5f) {
@@ -869,7 +913,6 @@ public:
             window.draw(notification);
         }
         
-        // Draw range change notification
         if (rangeChangeNotificationTimer > 0) {
             float alpha = 255.f;
             if (rangeChangeNotificationTimer > 2.5f) {
@@ -910,7 +953,7 @@ public:
         goldCircle.setFillColor(sf::Color(255, 215, 0));
         goldCircle.setPosition(sf::Vector2f(legendStartX + spacing, legendY));
         window.draw(goldCircle);
-        sf::Text goldText(font, "Gold: +80 score, -15 desire", 16);
+        sf::Text goldText(font, "Gold: +80 score, -10 desire", 16);
         goldText.setFillColor(sf::Color::White);
         goldText.setPosition(sf::Vector2f(legendStartX + spacing + 25.f, legendY - 2.f));
         window.draw(goldText);
@@ -919,12 +962,12 @@ public:
         rottenCircle.setFillColor(sf::Color(101, 67, 33));
         rottenCircle.setPosition(sf::Vector2f(legendStartX + spacing * 2, legendY));
         window.draw(rottenCircle);
-        sf::Text rottenText(font, "Rotten: +5 score, +30 desire", 16);
+        sf::Text rottenText(font, "Rotten: +5 score, +40 desire", 16);
         rottenText.setFillColor(sf::Color::White);
         rottenText.setPosition(sf::Vector2f(legendStartX + spacing * 2 + 25.f, legendY - 2.f));
         window.draw(rottenText);
         
-        sf::Text missedText(font, "Missed: -5 desire", 16);
+        sf::Text missedText(font, "Missed: -10 desire", 16);
         missedText.setFillColor(sf::Color(255, 100, 100));
         missedText.setPosition(sf::Vector2f(legendStartX + spacing * 3 + 5.f, legendY - 2.f));
         window.draw(missedText);
@@ -936,21 +979,21 @@ public:
         window.draw(pauseTitle);
         
         if (hoveredButton == 1) {
-            resumeButton.setFillColor(sf::Color(255, 60, 100)); // Brighter red apple
+            resumeButton.setFillColor(sf::Color(255, 60, 100));
         } else {
-            resumeButton.setFillColor(sf::Color(220, 20, 60)); // Red apple color
+            resumeButton.setFillColor(sf::Color(220, 20, 60));
         }
         
         if (hoveredButton == 2) {
-            restartButton.setFillColor(sf::Color(255, 235, 50)); // Brighter golden apple
+            restartButton.setFillColor(sf::Color(255, 235, 50));
         } else {
-            restartButton.setFillColor(sf::Color(255, 215, 0)); // Golden apple color
+            restartButton.setFillColor(sf::Color(255, 215, 0));
         }
         
         if (hoveredButton == 3) {
-            quitButton.setFillColor(sf::Color(131, 87, 53)); // Brighter rotten apple
+            quitButton.setFillColor(sf::Color(131, 87, 53));
         } else {
-            quitButton.setFillColor(sf::Color(101, 67, 33)); // Rotten apple color
+            quitButton.setFillColor(sf::Color(101, 67, 33));
         }
         
         window.draw(resumeButton);
