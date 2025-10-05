@@ -243,9 +243,10 @@ public:
         introTimer += deltaTime;
         
         // Cycle through intro scenes every 6 seconds (2x slower than before)
-        if (introTimer > 6.0f) {
+        // But stop at the last scene (scene 5)
+        if (introTimer > 6.0f && introScene < 5) {
             introTimer = 0;
-            introScene = (introScene + 1) % 6;
+            introScene++;
         }
     }
 
