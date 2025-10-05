@@ -9,11 +9,11 @@
 // Constants
 const int WIDTH = 800;
 const int HEIGHT = 600;
-const float PLAYER_SPEED = 5.0f;
-const float APPLE_FALL_SPEED = 2.0f;
+const float PLAYER_SPEED = 8.0f;
+const float APPLE_FALL_SPEED = 0.75f;  // 2.5x faster than 0.3
 const int MIN_DESIRE = 30;
 const int MAX_DESIRE = 80;
-const int GAME_DURATION = 60; // seconds
+const int GAME_DURATION = 180; // 2.5x faster (450 / 2.5 = 180 seconds = 3 minutes)
 
 enum class GameState {
     INTRO,
@@ -244,7 +244,7 @@ public:
         
         // Spawn apples
         spawnTimer += deltaTime;
-        if (spawnTimer > 1.0f) {
+        if (spawnTimer > 3.0f) {  // 2.5x faster spawning (7.5 / 2.5 = 3.0)
             spawnApple();
             spawnTimer = 0;
         }
@@ -268,9 +268,12 @@ public:
             }
         }
         
-        // Slowly decrease desire over time
-        if (static_cast<int>(gameTime * 2) % 3 == 0) {
+        // Slowly decrease desire over time (every 10 seconds)
+        static float desireDecayTimer = 0;
+        desireDecayTimer += deltaTime;
+        if (desireDecayTimer > 10.0f) {  // 2.5x faster decay (25 / 2.5 = 10)
             desireGauge = std::max(0, desireGauge - 1);
+            desireDecayTimer = 0;
         }
         
         // Check game over conditions
@@ -331,7 +334,7 @@ public:
     }
 
     void missApple() {
-        desireGauge = std::max(0, desireGauge - 20);
+        desireGauge = std::max(0, desireGauge - 10);
     }
 
     void resetGame() {
@@ -408,7 +411,7 @@ public:
         legend.setCharacterSize(14);
         legend.setFillColor(sf::Color::White);
         legend.setPosition(sf::Vector2f(WIDTH - 280.f, HEIGHT - 80.f));
-        legend.setString("Red: +20 score, +20 desire\nGold: +80 score, -10 desire\nBrown: +5 score, +40 desire\nMissed: -20 desire");
+        legend.setString("Red: +20 score, +20 desire\nGold: +80 score, -10 desire\nBrown: +5 score, +40 desire\nMissed: -10 desire");
         window.draw(legend);
     }
 
