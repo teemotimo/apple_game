@@ -7,10 +7,10 @@
 #include <ctime>
 
 // Constants
-const int WIDTH = 800;
-const int HEIGHT = 600;
+const int WIDTH = 1000;
+const int HEIGHT = 700;
 const float PLAYER_SPEED = 8.0f;
-const float APPLE_FALL_SPEED = 0.75f;  // 2.5x faster than 0.3
+const float APPLE_FALL_SPEED = 3.375f;  // 1.5x faster than 2.25
 const int MIN_DESIRE = 30;
 const int MAX_DESIRE = 80;
 const int GAME_DURATION = 180; // 2.5x faster (450 / 2.5 = 180 seconds = 3 minutes)
@@ -88,20 +88,25 @@ private:
     std::vector<Apple> apples;
     
     // UI Elements
+    sf::Text titleText;
     sf::Text scoreText;
     sf::Text desireText;
     sf::Text timerText;
     sf::RectangleShape desireBar;
     sf::RectangleShape desireBarBg;
+    sf::RectangleShape desireBarBorder;
+    sf::RectangleShape uiPanel;
+    sf::RectangleShape legendPanel;
     
     std::string gameOverReason;
 
 public:
     Game() : window(sf::VideoMode({WIDTH, HEIGHT}), "Balance of Desire"),
              font(),
-             scoreText(font, "", 24),
-             desireText(font, "", 20),
-             timerText(font, "", 20),
+             titleText(font, "", 32),
+             scoreText(font, "", 28),
+             desireText(font, "", 24),
+             timerText(font, "", 28),
              state(GameState::INTRO), playerX(WIDTH / 2.0f), 
              score(0), desireGauge(50), gameTime(0), spawnTimer(0),
              introTimer(0), introScene(0) {
@@ -120,38 +125,68 @@ public:
             }
         }
         
-        // Setup player
-        player.setSize(sf::Vector2f(50.f, 20.f));
-        player.setFillColor(sf::Color::White);
-        player.setOrigin(sf::Vector2f(25.f, 10.f));
-        player.setPosition(sf::Vector2f(playerX, static_cast<float>(HEIGHT) - 50.f));
+        // Setup player - make it look like a basket
+        player.setSize(sf::Vector2f(70.f, 15.f));
+        player.setFillColor(sf::Color(139, 69, 19)); // Brown basket color
+        player.setOutlineThickness(2.f);
+        player.setOutlineColor(sf::Color(101, 50, 15));
+        player.setOrigin(sf::Vector2f(35.f, 7.5f));
+        player.setPosition(sf::Vector2f(playerX, static_cast<float>(HEIGHT) - 80.f));
         
         // Setup UI
         setupUI();
     }
 
     void setupUI() {
-        scoreText = sf::Text(font, "", 24);
+        // UI Panel at top
+        uiPanel.setSize(sf::Vector2f(WIDTH, 120.f));
+        uiPanel.setFillColor(sf::Color(20, 20, 30, 230));
+        uiPanel.setPosition(sf::Vector2f(0.f, 0.f));
+        
+        // Title
+        titleText = sf::Text(font, "BALANCE OF DESIRE", 32);
+        titleText.setFillColor(sf::Color(255, 215, 0));
+        titleText.setStyle(sf::Text::Bold);
+        titleText.setPosition(sf::Vector2f(WIDTH / 2.f - 180.f, 10.f));
+        
+        // Score
+        scoreText = sf::Text(font, "Score: 0", 28);
         scoreText.setFillColor(sf::Color::White);
-        scoreText.setPosition(sf::Vector2f(10.f, 10.f));
+        scoreText.setStyle(sf::Text::Bold);
+        scoreText.setPosition(sf::Vector2f(30.f, 55.f));
         
-        desireText = sf::Text(font, "", 20);
-        desireText.setFillColor(sf::Color::White);
-        desireText.setPosition(sf::Vector2f(10.f, 50.f));
+        // Timer
+        timerText = sf::Text(font, "Time: 180s", 28);
+        timerText.setFillColor(sf::Color(100, 200, 255));
+        timerText.setStyle(sf::Text::Bold);
+        timerText.setPosition(sf::Vector2f(WIDTH - 180.f, 55.f));
         
-        timerText = sf::Text(font, "", 20);
-        timerText.setFillColor(sf::Color::White);
-        timerText.setPosition(sf::Vector2f(WIDTH - 150.f, 10.f));
+        // Desire label
+        desireText = sf::Text(font, "Desire Gauge", 24);
+        desireText.setFillColor(sf::Color(255, 255, 200));
+        desireText.setPosition(sf::Vector2f(WIDTH / 2.f - 80.f, 55.f));
+        
+        // Desire bar border
+        desireBarBorder.setSize(sf::Vector2f(304.f, 24.f));
+        desireBarBorder.setFillColor(sf::Color::Transparent);
+        desireBarBorder.setOutlineThickness(3.f);
+        desireBarBorder.setOutlineColor(sf::Color(200, 200, 200));
+        desireBarBorder.setPosition(sf::Vector2f(WIDTH / 2.f - 150.f, 85.f));
         
         // Desire bar background
-        desireBarBg.setSize(sf::Vector2f(200.f, 20.f));
-        desireBarBg.setFillColor(sf::Color(50, 50, 50));
-        desireBarBg.setPosition(sf::Vector2f(10.f, 80.f));
+        desireBarBg.setSize(sf::Vector2f(300.f, 20.f));
+        desireBarBg.setFillColor(sf::Color(40, 40, 50));
+        desireBarBg.setPosition(sf::Vector2f(WIDTH / 2.f - 148.f, 87.f));
         
         // Desire bar
-        desireBar.setSize(sf::Vector2f(200.f, 20.f));
+        desireBar.setSize(sf::Vector2f(300.f, 20.f));
         desireBar.setFillColor(sf::Color::Green);
-        desireBar.setPosition(sf::Vector2f(10.f, 80.f));
+        desireBar.setPosition(sf::Vector2f(WIDTH / 2.f - 148.f, 87.f));
+        
+        // Legend panel at bottom
+        legendPanel.setSize(sf::Vector2f(WIDTH, 60.f));
+        legendPanel.setFillColor(sf::Color(20, 20, 30, 230));
+        legendPanel.setPosition(sf::Vector2f(0.f, HEIGHT - 60.f));
     }
 
     void run() {
@@ -207,8 +242,8 @@ public:
     void updateIntro(float deltaTime) {
         introTimer += deltaTime;
         
-        // Cycle through intro scenes every 3 seconds
-        if (introTimer > 3.0f) {
+        // Cycle through intro scenes every 6 seconds (2x slower than before)
+        if (introTimer > 6.0f) {
             introTimer = 0;
             introScene = (introScene + 1) % 6;
         }
@@ -239,12 +274,12 @@ public:
         }
         
         // Clamp player position
-        playerX = std::max(25.0f, std::min(playerX, static_cast<float>(WIDTH) - 25.0f));
-        player.setPosition(sf::Vector2f(playerX, static_cast<float>(HEIGHT) - 50.f));
+        playerX = std::max(35.0f, std::min(playerX, static_cast<float>(WIDTH) - 35.0f));
+        player.setPosition(sf::Vector2f(playerX, static_cast<float>(HEIGHT) - 80.f));
         
         // Spawn apples
         spawnTimer += deltaTime;
-        if (spawnTimer > 3.0f) {  // 2.5x faster spawning (7.5 / 2.5 = 3.0)
+        if (spawnTimer > 2.0f) {  // 1.5x more frequent (3.0 / 1.5 = 2.0)
             spawnApple();
             spawnTimer = 0;
         }
@@ -288,15 +323,19 @@ public:
         
         // Update desire bar
         float desirePercent = desireGauge / 100.0f;
-        desireBar.setSize(sf::Vector2f(200.f * desirePercent, 20.f));
+        desireBar.setSize(sf::Vector2f(300.f * desirePercent, 20.f));
         
-        // Change bar color based on danger
-        if (desireGauge < MIN_DESIRE || desireGauge > MAX_DESIRE) {
-            desireBar.setFillColor(sf::Color::Red);
-        } else if (desireGauge < 40 || desireGauge > 70) {
-            desireBar.setFillColor(sf::Color::Yellow);
+        // Change bar color based on danger with smooth gradient
+        if (desireGauge < MIN_DESIRE) {
+            desireBar.setFillColor(sf::Color(200, 50, 50)); // Dark red
+        } else if (desireGauge > MAX_DESIRE) {
+            desireBar.setFillColor(sf::Color(255, 50, 0)); // Bright red
+        } else if (desireGauge < 40) {
+            desireBar.setFillColor(sf::Color(255, 200, 0)); // Yellow-orange
+        } else if (desireGauge > 70) {
+            desireBar.setFillColor(sf::Color(255, 165, 0)); // Orange
         } else {
-            desireBar.setFillColor(sf::Color::Green);
+            desireBar.setFillColor(sf::Color(50, 205, 50)); // Lime green
         }
     }
 
@@ -368,6 +407,11 @@ public:
     }
 
     void renderIntro() {
+        // Draw semi-transparent background
+        sf::RectangleShape overlay(sf::Vector2f(WIDTH, HEIGHT));
+        overlay.setFillColor(sf::Color(0, 0, 0, 200));
+        window.draw(overlay);
+        
         std::string scenes[] = {
             "A single red apple falls from the sky...\n\n\"The apple reflects the desire of mankind.\"",
             "A golden apple descends slowly...\n\n\"Some desires shine brighter than others...\"\n\"...tempting, precious, yet fleeting.\"",
@@ -377,10 +421,23 @@ public:
             "\"How will you endure your own desire?\"\n\"Find the balance... or be devoured by it.\"\n\n\nPress SPACE to begin\nUse Arrow Keys or A/D to move"
         };
         
-        sf::Text introText(font, scenes[introScene], 22);
+        sf::Text introText(font, scenes[introScene], 26);
         introText.setFillColor(sf::Color::White);
-        introText.setPosition(sf::Vector2f(WIDTH / 2.f - 300.f, HEIGHT / 2.f - 100.f));
+        introText.setStyle(sf::Text::Bold);
+        introText.setLineSpacing(1.5f);
+        
+        // Center the text
+        sf::FloatRect textBounds = introText.getLocalBounds();
+        introText.setPosition(sf::Vector2f(WIDTH / 2.f - textBounds.size.x / 2.f, HEIGHT / 2.f - textBounds.size.y / 2.f));
         window.draw(introText);
+        
+        // Draw title at top
+        sf::Text title(font, "BALANCE OF DESIRE", 48);
+        title.setFillColor(sf::Color(255, 215, 0));
+        title.setStyle(sf::Text::Bold);
+        sf::FloatRect titleBounds = title.getLocalBounds();
+        title.setPosition(sf::Vector2f(WIDTH / 2.f - titleBounds.size.x / 2.f, 50.f));
+        window.draw(title);
     }
 
     void renderPlaying() {
@@ -392,50 +449,177 @@ public:
         // Draw player
         window.draw(player);
         
-        // Draw UI
+        // Draw UI panels
+        window.draw(uiPanel);
+        window.draw(legendPanel);
+        
+        // Draw title
+        window.draw(titleText);
+        
+        // Draw score
         scoreText.setString("Score: " + std::to_string(score));
         window.draw(scoreText);
         
-        desireText.setString("Desire: " + std::to_string(desireGauge) + " [30-80]");
+        // Draw desire gauge label and value
+        desireText.setString("Desire: " + std::to_string(desireGauge) + "%");
         window.draw(desireText);
         
+        // Draw timer
         int timeLeft = GAME_DURATION - static_cast<int>(gameTime);
-        timerText.setString("Time: " + std::to_string(timeLeft) + "s");
+        int minutes = timeLeft / 60;
+        int seconds = timeLeft % 60;
+        timerText.setString("Time: " + std::to_string(minutes) + ":" + 
+                           (seconds < 10 ? "0" : "") + std::to_string(seconds));
         window.draw(timerText);
         
+        // Draw desire bar
         window.draw(desireBarBg);
         window.draw(desireBar);
+        window.draw(desireBarBorder);
         
-        // Draw legend
-        sf::Text legend(font);
-        legend.setCharacterSize(14);
-        legend.setFillColor(sf::Color::White);
-        legend.setPosition(sf::Vector2f(WIDTH - 280.f, HEIGHT - 80.f));
-        legend.setString("Red: +20 score, +20 desire\nGold: +80 score, -10 desire\nBrown: +5 score, +40 desire\nMissed: -10 desire");
-        window.draw(legend);
+        // Draw safe zone markers on bar
+        float safeStartX = WIDTH / 2.f - 148.f + (MIN_DESIRE * 3.f);
+        float safeEndX = WIDTH / 2.f - 148.f + (MAX_DESIRE * 3.f);
+        
+        sf::RectangleShape safeMarkerLeft(sf::Vector2f(2.f, 26.f));
+        safeMarkerLeft.setFillColor(sf::Color::White);
+        safeMarkerLeft.setPosition(sf::Vector2f(safeStartX, 86.f));
+        window.draw(safeMarkerLeft);
+        
+        sf::RectangleShape safeMarkerRight(sf::Vector2f(2.f, 26.f));
+        safeMarkerRight.setFillColor(sf::Color::White);
+        safeMarkerRight.setPosition(sf::Vector2f(safeEndX, 86.f));
+        window.draw(safeMarkerRight);
+        
+        // Draw legend with colored circles
+        float legendY = HEIGHT - 35.f;
+        float legendStartX = 30.f;
+        float spacing = 235.f;
+        
+        // Red apple
+        sf::CircleShape redCircle(10.f);
+        redCircle.setFillColor(sf::Color(220, 20, 60));
+        redCircle.setPosition(sf::Vector2f(legendStartX, legendY));
+        window.draw(redCircle);
+        sf::Text redText(font, "Red: +20 score, +20 desire", 16);
+        redText.setFillColor(sf::Color::White);
+        redText.setPosition(sf::Vector2f(legendStartX + 25.f, legendY - 2.f));
+        window.draw(redText);
+        
+        // Golden apple
+        sf::CircleShape goldCircle(10.f);
+        goldCircle.setFillColor(sf::Color(255, 215, 0));
+        goldCircle.setPosition(sf::Vector2f(legendStartX + spacing, legendY));
+        window.draw(goldCircle);
+        sf::Text goldText(font, "Gold: +80 score, -10 desire", 16);
+        goldText.setFillColor(sf::Color::White);
+        goldText.setPosition(sf::Vector2f(legendStartX + spacing + 25.f, legendY - 2.f));
+        window.draw(goldText);
+        
+        // Rotten apple
+        sf::CircleShape rottenCircle(10.f);
+        rottenCircle.setFillColor(sf::Color(101, 67, 33));
+        rottenCircle.setPosition(sf::Vector2f(legendStartX + spacing * 2, legendY));
+        window.draw(rottenCircle);
+        sf::Text rottenText(font, "Rotten: +5 score, +40 desire", 16);
+        rottenText.setFillColor(sf::Color::White);
+        rottenText.setPosition(sf::Vector2f(legendStartX + spacing * 2 + 25.f, legendY - 2.f));
+        window.draw(rottenText);
+        
+        // Missed
+        sf::Text missedText(font, "Missed: -10 desire", 16);
+        missedText.setFillColor(sf::Color(255, 100, 100));
+        missedText.setPosition(sf::Vector2f(legendStartX + spacing * 3 + 5.f, legendY - 2.f));
+        window.draw(missedText);
     }
 
     void renderGameOver() {
-        std::string message = "GAME OVER\n\n" + gameOverReason + 
-                             "\n\nFinal Score: " + std::to_string(score) +
-                             "\n\nPress R to restart";
-        sf::Text gameOverText(font, message, 28);
-        gameOverText.setFillColor(sf::Color::White);
+        // Semi-transparent overlay
+        sf::RectangleShape overlay(sf::Vector2f(WIDTH, HEIGHT));
+        overlay.setFillColor(sf::Color(0, 0, 0, 200));
+        window.draw(overlay);
+        
+        // Main message box
+        sf::RectangleShape messageBox(sf::Vector2f(600.f, 350.f));
+        messageBox.setFillColor(sf::Color(30, 30, 40, 250));
+        messageBox.setOutlineThickness(5.f);
+        messageBox.setOutlineColor(sf::Color(200, 50, 50));
+        messageBox.setPosition(sf::Vector2f(WIDTH / 2.f - 300.f, HEIGHT / 2.f - 175.f));
+        window.draw(messageBox);
+        
+        std::string message = "GAME OVER";
+        sf::Text gameOverText(font, message, 48);
+        gameOverText.setFillColor(sf::Color(255, 100, 100));
         gameOverText.setStyle(sf::Text::Bold);
-        gameOverText.setPosition(sf::Vector2f(WIDTH / 2.f - 250.f, HEIGHT / 2.f - 100.f));
+        sf::FloatRect bounds = gameOverText.getLocalBounds();
+        gameOverText.setPosition(sf::Vector2f(WIDTH / 2.f - bounds.size.x / 2.f, HEIGHT / 2.f - 140.f));
         window.draw(gameOverText);
+        
+        sf::Text reasonText(font, gameOverReason, 24);
+        reasonText.setFillColor(sf::Color::White);
+        sf::FloatRect reasonBounds = reasonText.getLocalBounds();
+        reasonText.setPosition(sf::Vector2f(WIDTH / 2.f - reasonBounds.size.x / 2.f, HEIGHT / 2.f - 60.f));
+        window.draw(reasonText);
+        
+        sf::Text scoreDisplay(font, "Final Score: " + std::to_string(score), 32);
+        scoreDisplay.setFillColor(sf::Color(255, 215, 0));
+        scoreDisplay.setStyle(sf::Text::Bold);
+        sf::FloatRect scoreBounds = scoreDisplay.getLocalBounds();
+        scoreDisplay.setPosition(sf::Vector2f(WIDTH / 2.f - scoreBounds.size.x / 2.f, HEIGHT / 2.f + 10.f));
+        window.draw(scoreDisplay);
+        
+        sf::Text restartText(font, "Press R to restart", 22);
+        restartText.setFillColor(sf::Color(150, 150, 150));
+        sf::FloatRect restartBounds = restartText.getLocalBounds();
+        restartText.setPosition(sf::Vector2f(WIDTH / 2.f - restartBounds.size.x / 2.f, HEIGHT / 2.f + 100.f));
+        window.draw(restartText);
     }
 
     void renderVictory() {
-        std::string message = "VICTORY!\n\nYou maintained balance\n\nFinal Score: " + 
-                             std::to_string(score) +
-                             "\nDesire: " + std::to_string(desireGauge) +
-                             "\n\nPress R to restart";
-        sf::Text victoryText(font, message, 28);
-        victoryText.setFillColor(sf::Color(255, 215, 0));
-        victoryText.setStyle(sf::Text::Bold);
-        victoryText.setPosition(sf::Vector2f(WIDTH / 2.f - 200.f, HEIGHT / 2.f - 120.f));
-        window.draw(victoryText);
+        // Semi-transparent overlay
+        sf::RectangleShape overlay(sf::Vector2f(WIDTH, HEIGHT));
+        overlay.setFillColor(sf::Color(0, 0, 0, 200));
+        window.draw(overlay);
+        
+        // Victory message box
+        sf::RectangleShape messageBox(sf::Vector2f(600.f, 400.f));
+        messageBox.setFillColor(sf::Color(30, 40, 30, 250));
+        messageBox.setOutlineThickness(5.f);
+        messageBox.setOutlineColor(sf::Color(255, 215, 0));
+        messageBox.setPosition(sf::Vector2f(WIDTH / 2.f - 300.f, HEIGHT / 2.f - 200.f));
+        window.draw(messageBox);
+        
+        sf::Text victoryTitle(font, "VICTORY!", 52);
+        victoryTitle.setFillColor(sf::Color(255, 215, 0));
+        victoryTitle.setStyle(sf::Text::Bold);
+        sf::FloatRect titleBounds = victoryTitle.getLocalBounds();
+        victoryTitle.setPosition(sf::Vector2f(WIDTH / 2.f - titleBounds.size.x / 2.f, HEIGHT / 2.f - 160.f));
+        window.draw(victoryTitle);
+        
+        sf::Text balanceText(font, "You maintained balance!", 28);
+        balanceText.setFillColor(sf::Color(100, 255, 100));
+        sf::FloatRect balanceBounds = balanceText.getLocalBounds();
+        balanceText.setPosition(sf::Vector2f(WIDTH / 2.f - balanceBounds.size.x / 2.f, HEIGHT / 2.f - 80.f));
+        window.draw(balanceText);
+        
+        sf::Text scoreDisplay(font, "Final Score: " + std::to_string(score), 36);
+        scoreDisplay.setFillColor(sf::Color::White);
+        scoreDisplay.setStyle(sf::Text::Bold);
+        sf::FloatRect scoreBounds = scoreDisplay.getLocalBounds();
+        scoreDisplay.setPosition(sf::Vector2f(WIDTH / 2.f - scoreBounds.size.x / 2.f, HEIGHT / 2.f - 10.f));
+        window.draw(scoreDisplay);
+        
+        sf::Text desireDisplay(font, "Final Desire: " + std::to_string(desireGauge) + "%", 28);
+        desireDisplay.setFillColor(sf::Color(150, 255, 150));
+        sf::FloatRect desireBounds = desireDisplay.getLocalBounds();
+        desireDisplay.setPosition(sf::Vector2f(WIDTH / 2.f - desireBounds.size.x / 2.f, HEIGHT / 2.f + 50.f));
+        window.draw(desireDisplay);
+        
+        sf::Text restartText(font, "Press R to restart", 22);
+        restartText.setFillColor(sf::Color(150, 150, 150));
+        sf::FloatRect restartBounds = restartText.getLocalBounds();
+        restartText.setPosition(sf::Vector2f(WIDTH / 2.f - restartBounds.size.x / 2.f, HEIGHT / 2.f + 130.f));
+        window.draw(restartText);
     }
 };
 
