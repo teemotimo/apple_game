@@ -3,18 +3,20 @@ Each apple reflected a part of human desire: greed, temptation, restraint, and d
 
 Life is all about desire. Your task is to balance your desire between hunger and restraint. To survive, you must eat… but not too much. To resist, you must endure… but not too long.
 
-SCORE: Red apple: Balance. The natural, moderate desire. +20 score +20 desire gauge Golden apple: Temptation with risk. High value, low desire gain.? +80 score -10 desire gauge Rotten apple: Corrupted desire. Low value, but fills you dangerously fast. +5 score +40 desire gauge Missed apple: +0 score -20 desire gauge
+SCORE: Red apple: Balance. The natural, moderate desire. +20 score +20 desire gauge 
+Golden apple: Temptation with risk. High value, low desire gain. +80 score -15 desire gauge 
+Rotten apple: Corrupted desire. Low value, but fills you dangerously fast. +5 score +30 desire gauge 
+Missed apple: +0 score -5 desire gauge
 
 ⚖️ Goal: Maintain your Desire Gauge between 30 and 80 while collecting as many points as possible.
 
-If Desire < 30 → “Apathy” (Game Over: You lose the will to live)
+If Desire < 20 → “Apathy” (Game Over: You lose the will to live)
 
 If Desire > 80 → “Obsession” (Game Over: You are consumed by greed)
 
 *************************************************************************************
 *************************************************************************************
 <Opening>
-BGM: Deep orchestral strings, slow heartbeat-like percussion, echoing choir.
 
 [Scene 1 – Darkness]
 A single red apple falls from the sky, landing on the ground with a soft thud.
