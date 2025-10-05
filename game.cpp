@@ -9,9 +9,9 @@
 // Constants
 const int WIDTH = 1000;
 const int HEIGHT = 700;
-const float PLAYER_SPEED = 8.0f;
+float PLAYER_SPEED = 8.0f;
 const float APPLE_FALL_SPEED = 3.375f;
-const int MIN_DESIRE = 30;
+const int MIN_DESIRE = 20;
 const int MAX_DESIRE = 80;
 const int GAME_DURATION = 180;
 
@@ -480,6 +480,7 @@ public:
                 currentAppleSpeed *= 1.5f;
                 lastSpeedIncreaseScore = currentMilestone;
                 speedIncreaseNotificationTimer = 3.0f;
+                PLAYER_SPEED += 4;
                 speedIncreaseMessage = "Apples Falling Faster!";
             }
         }
@@ -503,6 +504,7 @@ public:
                 state = GameState::VICTORY;
             } else {
                 state = GameState::GAME_OVER;
+                PLAYER_SPEED = 8;
                 gameOverReason = "Time's up!";
             }
             return;
@@ -523,7 +525,7 @@ public:
         
         // Spawn apples
         spawnTimer += deltaTime;
-        if (spawnTimer > 2.0f) {
+        if (spawnTimer > 1.0f) {
             spawnApple();
             spawnTimer = 0;
         }
@@ -614,17 +616,17 @@ public:
                 break;
             case AppleType::GOLDEN:
                 score += 80;
-                desireGauge = std::max(0, desireGauge - 10);
+                desireGauge = std::max(0, desireGauge - 15);
                 break;
             case AppleType::ROTTEN:
                 score += 5;
-                desireGauge = std::min(100, desireGauge + 40);
+                desireGauge = std::min(100, desireGauge + 30);
                 break;
         }
     }
 
     void missApple() {
-        desireGauge = std::max(0, desireGauge - 10);
+        desireGauge = std::max(0, desireGauge - 5);
     }
 
     void resetGame() {
@@ -644,6 +646,7 @@ public:
         rangeChangeMessage = "";
         speedIncreaseNotificationTimer = 0;
         speedIncreaseMessage = "";
+        PLAYER_SPEED = 8;
     }
 
     void render() {
@@ -907,7 +910,7 @@ public:
         goldCircle.setFillColor(sf::Color(255, 215, 0));
         goldCircle.setPosition(sf::Vector2f(legendStartX + spacing, legendY));
         window.draw(goldCircle);
-        sf::Text goldText(font, "Gold: +80 score, -10 desire", 16);
+        sf::Text goldText(font, "Gold: +80 score, -15 desire", 16);
         goldText.setFillColor(sf::Color::White);
         goldText.setPosition(sf::Vector2f(legendStartX + spacing + 25.f, legendY - 2.f));
         window.draw(goldText);
@@ -916,12 +919,12 @@ public:
         rottenCircle.setFillColor(sf::Color(101, 67, 33));
         rottenCircle.setPosition(sf::Vector2f(legendStartX + spacing * 2, legendY));
         window.draw(rottenCircle);
-        sf::Text rottenText(font, "Rotten: +5 score, +40 desire", 16);
+        sf::Text rottenText(font, "Rotten: +5 score, +30 desire", 16);
         rottenText.setFillColor(sf::Color::White);
         rottenText.setPosition(sf::Vector2f(legendStartX + spacing * 2 + 25.f, legendY - 2.f));
         window.draw(rottenText);
         
-        sf::Text missedText(font, "Missed: -10 desire", 16);
+        sf::Text missedText(font, "Missed: -5 desire", 16);
         missedText.setFillColor(sf::Color(255, 100, 100));
         missedText.setPosition(sf::Vector2f(legendStartX + spacing * 3 + 5.f, legendY - 2.f));
         window.draw(missedText);
