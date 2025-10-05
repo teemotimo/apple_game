@@ -2,51 +2,42 @@
 #include <SFML/Window.hpp>
 
 int main() {
-    // Create window
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Apple of Balance 🍎");
+    sf::RenderWindow window({800, 600}, "Apple of Balance 🍎");
     window.setFramerateLimit(60);
 
-    // Load textures
     sf::Texture appleTexture;
-    appleTexture.loadFromFile("assets/apple.png");
+    if (!appleTexture.loadFromFile("assets/apple.png")) return -1;
     sf::Sprite apple(appleTexture);
-    float appleX = 400.f;
-    float appleY = 0.f;
-    float appleSpeed = 3.f;
+    float appleX = 400.f, appleY = 0.f, appleSpeed = 3.f;
 
     sf::Texture basketTexture;
-    basketTexture.loadFromFile("assets/basket.png");
+    if (!basketTexture.loadFromFile("assets/basket.png")) return -1;
     sf::Sprite basket(basketTexture);
     basket.setPosition(400.f, 550.f);
     float basketSpeed = 5.f;
 
-    // Main loop
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
+            if (event.is<sf::Event::Closed>())  // new SFML 3 event syntax
                 window.close();
         }
 
-        // Move basket
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+        // Basket movement
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
             basket.move(-basketSpeed, 0.f);
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
             basket.move(basketSpeed, 0.f);
-        }
 
-        // Move apple
+        // Apple movement
         appleY += appleSpeed;
-        if (appleY > 600) appleY = 0.f; // reset at bottom
+        if (appleY > 600) appleY = 0.f;
         apple.setPosition(appleX, appleY);
 
-        // Draw everything
+        // Draw
         window.clear(sf::Color(240, 240, 240));
         window.draw(apple);
         window.draw(basket);
         window.display();
     }
-
-    return 0;
 }
